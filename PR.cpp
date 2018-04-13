@@ -4,10 +4,14 @@ struct Frame
 {
     int page;
     int count;
+    int nextIndex;
+    int pastIndex;
 };
 int page[20];
 bool isvalueinarray(int val, Frame frame[], int size);
-int max(Frame frame[], int size);
+int max(Frame frame[], int size, int key);
+int min(Frame frame[], int size);
+int searchNextIndex(int Nframe, int nowIndex);
 int FIFO();
 int OPT();
 int LRU();
@@ -84,13 +88,13 @@ int FIFO()
             {
                 for (int e = 0; e < n; e++)
                 {
-                    if (max(frame, n) != e)
+                    if (max(frame, n, 1) != e)
                     { //เพิ่มการนับหน้าที่ไม่ถูกเรียก
                         frame[e].count++;
                     }
                 }
-                frame[max(frame, n)].page = page[i];
-                frame[max(frame, n)].count = 1;
+                frame[max(frame, n, 1)].page = page[i];
+                frame[max(frame, n, 1)].count = 1;
                 pf++;
             }
         }
@@ -101,31 +105,109 @@ int FIFO()
                 frame[e].count++;
             }
         }
-        printf("\nInput page : %d\n", page[i]); //แยก Method ทีหลัง!!
+        printf("\nInput page : %d\n", page[i]);
         for (int e = 0; e < n; e++)
         {
             if (frame[e].page == -1)
             {
-                printf("\nAddress : %p | Value : [ ] | Time : %d\n", &frame[e].page, frame[e].count);
+                printf("\nAddress : [%p] | Value : [ ] | Time : [%d]\n", &frame[e].page, frame[e].count);
             }
             else
             {
-                printf("\nAddress : %p | Value : [%d] | Time : %d\n", &frame[e].page, frame[e].page, frame[e].count);
+                printf("\nAddress : [%p] | Value : [%d] | Time : [%d]\n", &frame[e].page, frame[e].page, frame[e].count);
             }
         }
         printf("\n=========================================\n");
         printf("\n Page fault (FIFO) : %d\n", pf);
         printf("\n=========================================\n");
     }
-
     return 0;
 }
 int OPT()
 {
+    int n = 0;
+    int pf = 0;
+    printf("\n\nPlease input number of frame...\n>>>");
+    scanf("%d", &n);
+    struct Frame frame[n];
+    for (int e = 0; e < n; e++)
+    {
+        frame[e].page = -1;
+        frame[e].nextIndex = 0;
+    }
+    for (int i = 0; i < 20; i++)
+    {
+        if (isvalueinarray(page[i], frame, n) != 1) // 0 == false, 1 == true เช็คว่าค่าซ้ำไหม? ถ้าซ้ำจะไม่ทำ
+        {
+            if (isvalueinarray(-1, frame, n) == 1) //check -1 in frame page เช็คว่าใน frame มีค่าว่างแรกเริ่มไหม?
+            {
+                for (int e = 0; e < n; e++)
+                {
+                    if (frame[e].page == -1)
+                    {
+                        frame[e].page = page[i];
+                        frame[e].nextIndex = searchNextIndex(frame[e].page, i);
+                        pf++;
+                        break;
+                    }
+                    else
+                    {
+                        frame[e].nextIndex = searchNextIndex(frame[e].page, i);
+                    }
+                }
+            }
+            else
+            {
+                if (frame[min(frame, n)].nextIndex == 0)
+                {
+                    frame[min(frame, n)].page = page[i];
+                    frame[min(frame, n)].nextIndex = searchNextIndex(frame[min(frame, n)].page, i);
+                }
+                else
+                {
+                    frame[max(frame, n, 2)].page = page[i];
+                    frame[max(frame, n, 2)].nextIndex = searchNextIndex(frame[max(frame, n, 2)].page, i);
+                }
+                pf++;
+            }
+        }
+        else
+        {
+            for (int e = 0; e < n; e++)
+            {
+                frame[e].nextIndex = searchNextIndex(frame[e].page, i);
+            }
+        }
+        printf("\nInput page : %d\n", page[i]);
+        for (int e = 0; e < n; e++)
+        {
+            if (frame[e].page == -1)
+            {
+                printf("\nAddress : [%p] | Value : [ ] | Next index : [ ]\n", &frame[e].page);
+            }
+            else
+            {
+                printf("\nAddress : [%p] | Value : [%d] | Next index : [%d]\n", &frame[e].page, frame[e].page, frame[e].nextIndex);
+            }
+        }
+        printf("\n=========================================\n");
+        printf("\n Page fault (OPT) : %d\n", pf);
+        printf("\n=========================================\n");
+    }
     return 0;
 }
 int LRU()
 {
+    int n = 0;
+    int pf = 0;
+    printf("\n\nPlease input number of frame...\n>>>");
+    scanf("%d", &n);
+    struct Frame frame[n];
+    for (int e = 0; e < n; e++)
+    {
+        frame[e].page = -1;
+        frame[e].pastIndex = 0;
+    }
     return 0;
 }
 bool isvalueinarray(int val, Frame frame[], int size)
@@ -137,16 +219,58 @@ bool isvalueinarray(int val, Frame frame[], int size)
     }
     return false;
 }
-int max(Frame frame[], int size)
+int max(Frame frame[], int size, int key)
 {
     int index = 0;
-    int max = frame[index].count;
+    if (key == 1) //เรียกใช้ FIFO
+    {
+        int max = frame[index].count;
+        for (int i = 0; i < size; i++)
+        {
+            if (frame[i].count > max)
+            {
+                max = frame[i].count;
+                index = i;
+            }
+        }
+    }
+    else if (key == 2) //เรียกใช้ OPT
+    {
+        int max = frame[index].nextIndex;
+        for (int i = 0; i < size; i++)
+        {
+            if (frame[i].nextIndex > max)
+            {
+                max = frame[i].nextIndex;
+                index = i;
+            }
+        }
+    }
+    return index;
+}
+int min(Frame frame[], int size)
+{
+    int index = 0;
+    int min = frame[index].nextIndex;
     for (int i = 0; i < size; i++)
     {
-        if (frame[i].count > max)
+        if (frame[i].nextIndex < min)
         {
-            max = frame[i].count;
+            min = frame[i].nextIndex;
             index = i;
+        }
+    }
+    return index;
+}
+int searchNextIndex(int Nframe, int nowIndex)
+{
+    int index = 0;
+    for (int i = nowIndex + 1; i < 20; i++)
+    {
+        if (Nframe == page[i])
+        {
+            index = i; //ถ้ามีการเรียกใช้ในอนาคต
+            break;
         }
     }
     return index;
