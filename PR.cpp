@@ -3,15 +3,16 @@
 struct Frame
 {
     int page;
-    int count;
-    int nextIndex;
-    int pastIndex;
+    int count;     //เอาไว้ใช้กับ FIFO
+    int nextIndex; //เอาไว้ใช้กับ OPT
+    int pastIndex; //เอาไว้ใช้กับ LRU
 };
 int page[20];
 bool isvalueinarray(int val, Frame frame[], int size);
 int max(Frame frame[], int size, int key);
-int min(Frame frame[], int size);
+int min(Frame frame[], int size, int key);
 int searchNextIndex(int Nframe, int nowIndex);
+int searchPastIndex(int Nframe, int nowIndex);
 int FIFO();
 int OPT();
 int LRU();
@@ -158,10 +159,10 @@ int OPT()
             }
             else
             {
-                if (frame[min(frame, n)].nextIndex == 0)
+                if (frame[min(frame, n, 1)].nextIndex == 0)
                 {
-                    frame[min(frame, n)].page = page[i];
-                    frame[min(frame, n)].nextIndex = searchNextIndex(frame[min(frame, n)].page, i);
+                    frame[min(frame, n, 1)].page = page[i];
+                    frame[min(frame, n, 1)].nextIndex = searchNextIndex(frame[min(frame, n, 1)].page, i);
                 }
                 else
                 {
@@ -208,6 +209,57 @@ int LRU()
         frame[e].page = -1;
         frame[e].pastIndex = 0;
     }
+    for (int i = 0; i < 20; i++)
+    {
+        if (isvalueinarray(page[i], frame, n) != 1) // 0 == false, 1 == true เช็คว่าค่าซ้ำไหม? ถ้าซ้ำจะไม่ทำ
+        {
+            if (isvalueinarray(-1, frame, n) == 1) //check -1 in frame page เช็คว่าใน frame มีค่าว่างแรกเริ่มไหม?
+            {
+                for (int e = 0; e < n; e++)
+                {
+                    if (frame[e].page == -1)
+                    {
+                        frame[e].page = page[i];
+                        frame[e].pastIndex = i;
+                        pf++;
+                        break;
+                    }
+                    else
+                    {
+                        frame[e].pastIndex = searchPastIndex(frame[e].page, i);
+                    }
+                }
+            }
+            else
+            {
+                frame[min(frame, n, 2)].page = page[i];
+                frame[min(frame, n, 2)].pastIndex = searchPastIndex(frame[min(frame, n, 2)].page, i);
+                pf++;
+            }
+        }
+        else
+        {
+            for (int e = 0; e < n; e++)
+            {
+                frame[e].pastIndex = searchPastIndex(frame[e].page, i);
+            }
+        }
+        printf("\nInput page : %d\n", page[i]);
+        for (int e = 0; e < n; e++)
+        {
+            if (frame[e].page == -1)
+            {
+                printf("\nAddress : [%p] | Value : [ ] | Nearest past index : [ ]\n", &frame[e].page);
+            }
+            else
+            {
+                printf("\nAddress : [%p] | Value : [%d] | Nearest past index : [%d]\n", &frame[e].page, frame[e].page, frame[e].pastIndex);
+            }
+        }
+        printf("\n=========================================\n");
+        printf("\n Page fault (LRU) : %d\n", pf);
+        printf("\n=========================================\n");
+    }
     return 0;
 }
 bool isvalueinarray(int val, Frame frame[], int size)
@@ -248,18 +300,34 @@ int max(Frame frame[], int size, int key)
     }
     return index;
 }
-int min(Frame frame[], int size)
+int min(Frame frame[], int size, int key)
 {
     int index = 0;
-    int min = frame[index].nextIndex;
-    for (int i = 0; i < size; i++)
+    if (key == 1) //ใช้กับ OPT
     {
-        if (frame[i].nextIndex < min)
+        int min = frame[index].nextIndex;
+        for (int i = 0; i < size; i++)
         {
-            min = frame[i].nextIndex;
-            index = i;
+            if (frame[i].nextIndex < min)
+            {
+                min = frame[i].nextIndex;
+                index = i;
+            }
         }
     }
+    else if (key == 2) // ใช้กับ LRU
+    {
+        int min = frame[index].pastIndex;
+        for (int i = 0; i < size; i++)
+        {
+            if (frame[i].pastIndex < min)
+            {
+                min = frame[i].pastIndex;
+                index = i;
+            }
+        }
+    }
+
     return index;
 }
 int searchNextIndex(int Nframe, int nowIndex)
@@ -270,6 +338,19 @@ int searchNextIndex(int Nframe, int nowIndex)
         if (Nframe == page[i])
         {
             index = i; //ถ้ามีการเรียกใช้ในอนาคต
+            break;
+        }
+    }
+    return index;
+}
+int searchPastIndex(int Nframe, int nowIndex)
+{
+    int index = 0;
+    for (int i = nowIndex; i > 0; i--)
+    {
+        if (Nframe == page[i])
+        {
+            index = i; //หาตัวที่เรียกใช้ก่อนชาวบ้านใน frame และเป็นตัวที่ใกล้ที่สุด
             break;
         }
     }
