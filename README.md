@@ -1,5 +1,8 @@
-<p># PageReplacement</p>
-<p>Page Replacement Algorithm : FIFO, OPT and LRU by C programming </p>
+# PageReplacement
+<p>Page Replacement Algorithm (C programming) </p>
+  <p> - FIFO</p>
+   <p> - OPT</p>
+    <p> - LRU</p>
 <p>Develop by : Sitthinon Chanaritthichai.</p>
 <p>Computer Science</p>
 <p>Faculty of Liberal Arts and Science</p>
