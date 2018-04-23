@@ -356,6 +356,8 @@ int searchPastIndex(int Nframe, int nowIndex)
     }
     return index;
 }
+//How to run terminal???
 //compile gcc -o PR PR.cpp
 //run PR
-//Input  2 7 4 0 5 5 3 6 6 5 3 1 5 2 3 0 7 0 1 2
+//Input : 2 7 4 0 5 5 3 6 6 5 3 1 5 2 3 0 7 0 1 2
+//Input : 1 2 3 4 2 1 5 6 2 1 2 3 7 6 3 2 1 2 3 6
